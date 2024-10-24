@@ -4,6 +4,7 @@
   "package": "net.idothehax.rarays.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
+    "BlockDisplayEntityAccessor"
   ],
   "client": [
   ],
