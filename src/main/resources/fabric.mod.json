@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "id": "rarays",
+  "version": "${version}",
+  "name": "Ra's Rays",
+  "description": "",
+  "authors": [],
+  "contact": {
+    "repo": "https://github.com/IDoTheHax/RaRays"
+  },
+  "license": "All-Rights-Reserved",
+  "icon": "assets/rarays/icon.png",
+  "environment": "server",
+  "entrypoints": {
+    "client": [
+      "net.idothehax.rarays.client.Ra_sRaysClient"
+    ],
+    "main": [
+      "net.idothehax.rarays.Ra_sRays"
+    ]
+  },
+  "mixins": [
+    "rarays.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric": "*",
+    "minecraft": "${minecraft_version}"
+  }
+}
