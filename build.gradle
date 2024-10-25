@@ -12,6 +12,10 @@ base {
 
 repositories {
     maven { url 'https://maven.nucleoid.xyz' }
+    maven {
+        name = "Terraformers"
+        url = "https://maven.terraformersmc.com/"
+    }
 }
 
 dependencies {
@@ -28,6 +32,10 @@ dependencies {
     modImplementation include("eu.pb4:polymer-core:${project.polymer_version}")
     modImplementation include("eu.pb4:polymer-resource-pack:${project.polymer_version}")
     modImplementation include("eu.pb4:polymer-blocks:${project.polymer_version}")
+    modImplementation include("eu.pb4:polymer-virtual-entity:${project.polymer_version}")
+
+    // ModMenu
+    modImplementation("com.terraformersmc:modmenu:${project.modmenu_version}")
 }
 
 processResources {

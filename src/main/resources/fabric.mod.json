@@ -4,19 +4,18 @@
   "version": "${version}",
   "name": "Ra's Rays",
   "description": "",
-  "authors": [],
+  "authors": ["IDoTheHax"],
+  "contributors": ["Patbox"],
   "contact": {
+    "discord": "https://discord.gg/asvf6Mvfsq",
     "repo": "https://github.com/IDoTheHax/RaRays"
   },
   "license": "All-Rights-Reserved",
   "icon": "assets/rarays/icon.png",
-  "environment": "server",
+  "environment": "*",
   "entrypoints": {
-    "client": [
-      "net.idothehax.rarays.client.Ra_sRaysClient"
-    ],
     "main": [
-      "net.idothehax.rarays.Ra_sRays"
+      "net.idothehax.rarays.RaRays"
     ]
   },
   "mixins": [
