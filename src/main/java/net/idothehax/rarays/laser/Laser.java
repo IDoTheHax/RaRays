@@ -1,15 +1,17 @@
 package net.idothehax.rarays.laser;
 
-import eu.pb4.polymer.virtualentity.api.ElementHolder;
-import eu.pb4.polymer.virtualentity.api.elements.BlockDisplayElement;
-import eu.pb4.polymer.virtualentity.api.attachment.ChunkAttachment;
-import net.minecraft.block.Blocks;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
 import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.RaycastContext;
+import net.minecraft.world.World;
 import net.minecraft.entity.player.PlayerEntity;
-import org.joml.Vector3f; // Import the Vector3f class
+import eu.pb4.polymer.virtualentity.api.ElementHolder;
+import eu.pb4.polymer.virtualentity.api.attachment.ChunkAttachment;
+import eu.pb4.polymer.virtualentity.api.elements.BlockDisplayElement;
+import net.minecraft.block.Blocks;
+import org.joml.Vector3f;
 
 public class Laser {
     private final World world;
@@ -21,21 +23,32 @@ public class Laser {
     }
 
     public void spawnLaser() {
-        // Get the player's position and look direction
+        // Set the starting height for the laser
+        double startY = 200.0; // Fixed height
         Vec3d playerPos = player.getPos();
-        Vec3d playerDirection = player.getRotationVector().normalize(); // Ensure the direction is normalized
+        Vec3d startPos = new Vec3d(playerPos.x, startY, playerPos.z); // Start position at the fixed height
 
-        // Define how far away you want the laser to spawn
-        double distance = 10.0; // How far to spawn from the player
-        Vec3d startPos = playerPos.add(playerDirection.multiply(distance));
+        // Perform a raycast straight downward from the starting position
+        Vec3d endPos = new Vec3d(startPos.x, 0.0, startPos.z); // Aim straight down to the ground level
+        BlockHitResult hitResult = world.raycast(new RaycastContext(startPos, endPos, RaycastContext.ShapeType.OUTLINE, RaycastContext.FluidHandling.NONE, player));
+
+        // Determine the target position based on the raycast result
+        Vec3d targetPosition;
+        double dipDepth = 1.5; // Extend the laser into the ground by this depth
+        if (hitResult.getType() == BlockHitResult.Type.BLOCK) {
+            targetPosition = hitResult.getPos().subtract(0, dipDepth, 0); // Offset the target downwards
+        } else {
+            targetPosition = new Vec3d(startPos.x, 0.0, startPos.z);
+        }
+
+        // Calculate total vertical distance from start to target
+        double totalDistance = startY - targetPosition.y;
+        int numberOfBlocks = Math.max((int) (totalDistance), 50); // Dynamic block count with minimum of 5 blocks
+        double blockSpacing = totalDistance / (numberOfBlocks - 1);
+        double glassSpacingOffset = blockSpacing * 0.5;
 
         // Create an ElementHolder for the laser
         ElementHolder holder = new ElementHolder();
-        int numberOfBlocks = 100; // Number of blocks to stack
-        double blockSpacing = 1.0; // Space between blocks (adjust as needed)
-
-        // Calculate the offset to center the blocks
-        double offset = (numberOfBlocks - 1) * blockSpacing / 2.0;
 
         // Create the laser blocks
         for (int i = 0; i < numberOfBlocks; i++) {
@@ -43,8 +56,8 @@ public class Laser {
             laserElement.setBlockState(Blocks.LIGHT_BLUE_WOOL.getDefaultState()); // Replace with your desired laser block state
 
             // Calculate the position for the current laser block
-            // Offset the y-position by half a block height (0.5) to center it
-            Vec3d laserPos = startPos.add(playerDirection.multiply(i * blockSpacing - offset)).add(0, 0.5, 0);
+            double laserY = startY - i * blockSpacing; // Position the laser block
+            Vec3d laserPos = new Vec3d(startPos.x+0.25, Math.max(laserY+0.25, targetPosition.y), startPos.z+0.25); // Ensure it does not exceed target Y
             laserElement.setOverridePos(laserPos); // Set position of laser block
 
             holder.addElement(laserElement);
@@ -55,9 +68,9 @@ public class Laser {
             BlockDisplayElement glassElement = new BlockDisplayElement();
             glassElement.setBlockState(Blocks.WHITE_STAINED_GLASS.getDefaultState()); // Use glass block
 
-            // Calculate the position for the current glass block
-            // Offset the y-position by half a block height (0.5) to center it
-            Vec3d glassPos = startPos.add(playerDirection.multiply(i * blockSpacing - offset)).add(-0.25, 0.25, -0.25);
+            double glassY = startY - i * (blockSpacing + glassSpacingOffset);
+            Vec3d glassPos = new Vec3d(startPos.x, Math.max(glassY, targetPosition.y) + 0.5, startPos.z);
+
             glassElement.setOverridePos(glassPos); // Set position of glass block
 
             // Scale the glass to be slightly larger than the laser
@@ -66,10 +79,8 @@ public class Laser {
             holder.addElement(glassElement);
         }
 
-        // Attach the holder to the world at the initial position
+        // Attach the holder to the world at the starting position
         BlockPos holderPos = new BlockPos((int) startPos.x, (int) startPos.y, (int) startPos.z);
         ChunkAttachment.ofTicking(holder, (ServerWorld) world, holderPos);
     }
-
-
 }
