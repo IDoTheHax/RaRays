@@ -37,6 +37,8 @@ public class Laser {
     private final List<BlockDisplayElement> activeGlassElements = new ArrayList<>();
     private final List<BlockDisplayElement> activeLaserElements = new ArrayList<>();
 
+    private List<ElementHolder> rayElements = new ArrayList<ElementHolder>();
+
     private ElementHolder holder;
     private float oscillationTime = 0.0f;
     private int spawnIndex = 0;
@@ -182,6 +184,7 @@ public class Laser {
         // Check if the laser has reached the ground and wool elements are finished spawning
         if (!isDespawning && !glassElements.isEmpty() && lastElementPosition != null) {
             if (lastElementPosition.y <= targetPosition.y && spawnIndex >= laserElements.size()) {
+
                 startDespawn();
             }
         }
@@ -216,6 +219,7 @@ public class Laser {
             if (glassSpawnIndex >= glassElements.size() && laserSpawnIndex >= laserElements.size()) {
                 isSpawning = false;
                 // TODO cool explosion stuff here
+                createFlashBurnEffect(lastElementPosition);
                 break;
             }
         }
@@ -274,4 +278,71 @@ public class Laser {
             laserElement.setScale(new Vector3f((float) (0.5 * scale), (float) (0.5 * scale), (float) (0.5 * scale)));
         }
     }
+
+    private void createFlashBurnEffect(Vec3d center) {
+        int rayCount = 12; // Number of rays to cast in different directions
+        double rayLength = 5.0; // Length of each ray
+        for (int i = 0; i < rayCount; i++) {
+            // Calculate the angle for each ray
+            double angle = (2 * Math.PI / rayCount) * i;
+            Vec3d rayDirection = new Vec3d(Math.cos(angle), 0, Math.sin(angle)).normalize().multiply(rayLength);
+
+            // Calculate the end position of the ray
+            Vec3d endPosition = center.add(rayDirection);
+
+            // Cast a ray from the center to the end position
+            BlockHitResult result = world.raycast(new RaycastContext(center, endPosition, RaycastContext.ShapeType.OUTLINE, RaycastContext.FluidHandling.NONE, player));
+
+            // Spawn particles to visualize the ray
+            spawnRayParticles(center, endPosition);
+
+            // If a block was hit, change its state
+            if (result.getType() == HitResult.Type.BLOCK) {
+                BlockPos blockPos = result.getBlockPos();
+                changeBlockState(blockPos);
+            }
+        }
+    }
+
+    private void spawnRayParticles(Vec3d start, Vec3d end) {
+        // Clear previous ray elements if necessary
+        for (ElementHolder holder : rayElements) {
+            holder.destroy(); // Remove each holder
+        }
+        rayElements.clear();
+
+        // Calculate the distance and direction
+        double distance = start.distanceTo(end);
+        Vec3d direction = end.subtract(start).normalize();
+
+        // Adjust these values for the number of blocks and their size
+        int blockCount = (int) Math.ceil(distance / 0.5); // 0.5 block intervals
+
+        for (int i = 0; i < blockCount; i++) {
+            // Calculate the position for each block
+            Vec3d blockPos = start.add(direction.multiply(i * 0.5));
+
+            // Create the BlockDisplayElement for the ray
+            BlockDisplayElement blockDisplayElement = new BlockDisplayElement(Blocks.GLASS.getDefaultState());
+
+            // Set the translation and scale to make it stretched and visible
+            blockDisplayElement.setTranslation(new Vector3f((float) blockPos.x, (float) blockPos.y, (float) blockPos.z));
+            blockDisplayElement.setScale(new Vector3f(0.1f, 0.1f, 0.5f)); // Adjusted for line visibility
+
+            // Create an ElementHolder to manage this BlockDisplayElement
+            ElementHolder holder = new ElementHolder(); // Pass world context
+            holder.addElement(blockDisplayElement); // Add element to the holder
+            rayElements.add(holder); // Add holder to list
+        }
+    }
+
+
+
+    private void changeBlockState(BlockPos pos) {
+        // Example: Change the block at the position to a different block type (e.g., Netherrack)
+        if (world.getBlockState(pos).getBlock() != Blocks.AIR) {
+            world.setBlockState(pos, Blocks.NETHERRACK.getDefaultState(), 3); // Use a different block as needed
+        }
+    }
+
 }
