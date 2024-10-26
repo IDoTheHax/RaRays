@@ -15,6 +15,9 @@ import eu.pb4.polymer.virtualentity.api.elements.BlockDisplayElement;
 import net.minecraft.block.Blocks;
 import org.joml.Vector3f;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class Laser {
     private final World world;
     private final PlayerEntity player;
@@ -22,6 +25,14 @@ public class Laser {
     private static final double MAX_DISTANCE = 100.0; // Maximum distance for the raycast
     private static final double MAX_HEIGHT = 200.0; // Maximum height for laser origin
     private static final double MIN_HEIGHT = 100.0; // Minimum height for laser origin
+    private static final float OSCILLATION_AMPLITUDE = 0.3f; // How far in/out the laser will move
+    private static final double OSCILLATION_SPEED = 0.03f; // Speed of oscillation
+    private final List<BlockDisplayElement> glassElements = new ArrayList<>();
+    private final List<BlockDisplayElement> laserElements = new ArrayList<>();
+
+    private ElementHolder holder;
+    private double oscillationOffset = 0; // Offset for oscillation
+    private float oscillationTime = 0.0f;
 
     public Laser(World world, PlayerEntity player) {
         this.world = world;
@@ -65,7 +76,7 @@ public class Laser {
         int numberOfBlocks = Math.max((int) (totalDistance * 4), 100);
         int numberOfGlassBlocks = numberOfBlocks / 2;
 
-        ElementHolder holder = new ElementHolder();
+        holder = new ElementHolder();
 
         // Create glass blocks first
         for (int i = 0; i < numberOfGlassBlocks; i++) {
@@ -78,15 +89,15 @@ public class Laser {
             // Minimal offset for glass
             double offsetAmount = 0.02;
             Vec3d offset = new Vec3d(
-                    random.nextDouble() * offsetAmount - offsetAmount/2,
-                    random.nextDouble() * offsetAmount - offsetAmount/2,
-                    random.nextDouble() * offsetAmount - offsetAmount/2
+                    random.nextDouble() * offsetAmount - offsetAmount / 2,
+                    random.nextDouble() * offsetAmount - offsetAmount / 2,
+                    random.nextDouble() * offsetAmount - offsetAmount / 2
             );
 
             glassElement.setScale(new Vector3f(1.0f, 1.0f, 1.0f));
-            // Center the glass blocks
             glassElement.setOverridePos(pos.add(offset).add(0.5, 0.5, 0.5));
 
+            glassElements.add(glassElement);
             holder.addElement(glassElement);
         }
 
@@ -99,21 +110,46 @@ public class Laser {
             Vec3d pos = startPos.lerp(targetPosition, progress);
 
             // Very small offset for tighter beam
-            double offsetAmount = 0.03;
+            double offsetAmount = 0.02;
             Vec3d offset = new Vec3d(
-                    random.nextDouble() * offsetAmount - offsetAmount/2,
-                    random.nextDouble() * offsetAmount - offsetAmount/2,
-                    random.nextDouble() * offsetAmount - offsetAmount/2
+                    random.nextDouble() * offsetAmount - offsetAmount / 2,
+                    random.nextDouble() * offsetAmount - offsetAmount / 2,
+                    random.nextDouble() * offsetAmount - offsetAmount / 2
             );
 
             laserElement.setScale(new Vector3f(0.5f, 0.5f, 0.5f));
-            // Center the wool blocks in the glass
-            laserElement.setOverridePos(pos.add(offset).add(0.85, 1, 0.85));
+            laserElement.setOverridePos(pos.add(offset).add(0.75, 1, 0.75));
 
+            laserElements.add(laserElement);
             holder.addElement(laserElement);
         }
 
         BlockPos holderPos = new BlockPos((int) startPos.x, (int) startPos.y, (int) startPos.z);
         ChunkAttachment.ofTicking(holder, (ServerWorld) world, holderPos);
+
+        // Start the oscillation
+        startOscillation();
+    }
+
+    private void startOscillation() {
+        // Reset the oscillation offset
+        oscillationOffset = 0;
+    }
+
+    public void updateOscillation() {
+        oscillationTime += OSCILLATION_SPEED; // Increment time
+        double oscillationFactor = Math.sin(oscillationTime); // Calculate oscillation factor
+
+        // Calculate the scale factor based on the oscillation factor
+        float scale = 1.0f + (float)(oscillationFactor * OSCILLATION_AMPLITUDE);
+
+        // Update the size of the glass blocks
+        for (BlockDisplayElement glassElement : glassElements) {
+            glassElement.setScale(new Vector3f(scale, scale, scale)); // Update scale for flickering effect
+        }
+
+        for (BlockDisplayElement laserElement : laserElements) {
+            laserElement.setScale(new Vector3f((float) (0.5 * scale), (float) (0.5 * scale), (float) (0.5 * scale))); // Update scale for flickering effect
+        }
     }
 }

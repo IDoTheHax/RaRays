@@ -2,7 +2,9 @@ package net.idothehax.rarays;
 
 import eu.pb4.polymer.core.api.item.PolymerItemGroupUtils;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.idothehax.rarays.item.RaRaySpawnerItem;
+import net.idothehax.rarays.laser.Laser;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
@@ -15,9 +17,15 @@ import net.minecraft.util.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class RaRays implements ModInitializer {
     public static final String MOD_ID = "rarays";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+
+    public static final List<Laser> lasers = new ArrayList<>();
+
 
     public static final RaRaySpawnerItem RA_RAY_SPAWNER_ITEM = registerItem("ra_ray_spawner", new RaRaySpawnerItem(new Item.Settings().fireproof().maxCount(1), Items.AMETHYST_SHARD));
 
@@ -33,6 +41,13 @@ public class RaRays implements ModInitializer {
     public void onInitialize() {
         RaRays.LOGGER.info("Initializing Ra Rays");
         PolymerItemGroupUtils.registerPolymerItemGroup(Identifier.of(RaRays.MOD_ID, "ras_things"), ITEM_GROUP);
+
+        ServerTickEvents.END_WORLD_TICK.register(world -> {
+            // Update each laser
+            for (Laser laser : lasers) {
+                laser.updateOscillation();
+            }
+        });
     }
 
     private static <T extends Item> T registerItem(String id, T item) {
