@@ -2,8 +2,10 @@ package net.idothehax.rarays.laser;
 
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.hit.BlockHitResult;
+import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.math.random.Random;
 import net.minecraft.world.RaycastContext;
 import net.minecraft.world.World;
 import net.minecraft.entity.player.PlayerEntity;
@@ -16,70 +18,101 @@ import org.joml.Vector3f;
 public class Laser {
     private final World world;
     private final PlayerEntity player;
+    private final Random random;
+    private static final double MAX_DISTANCE = 100.0; // Maximum distance for the raycast
+    private static final double MAX_HEIGHT = 200.0; // Maximum height for laser origin
+    private static final double MIN_HEIGHT = 100.0; // Minimum height for laser origin
 
     public Laser(World world, PlayerEntity player) {
         this.world = world;
         this.player = player;
+        this.random = Random.create();
     }
 
     public void spawnLaser() {
-        // Set the starting height for the laser
-        double startY = 200.0; // Fixed height
-        Vec3d playerPos = player.getPos();
-        Vec3d startPos = new Vec3d(playerPos.x, startY, playerPos.z); // Start position at the fixed height
+        Vec3d lookVec = player.getRotationVec(1.0F);
+        Vec3d eyePos = player.getEyePos();
+        Vec3d targetPos = eyePos.add(lookVec.multiply(MAX_DISTANCE));
 
-        // Perform a raycast straight downward from the starting position
-        Vec3d endPos = new Vec3d(startPos.x, 0.0, startPos.z); // Aim straight down to the ground level
-        BlockHitResult hitResult = world.raycast(new RaycastContext(startPos, endPos, RaycastContext.ShapeType.OUTLINE, RaycastContext.FluidHandling.NONE, player));
+        BlockHitResult hitResult = world.raycast(new RaycastContext(
+                eyePos,
+                targetPos,
+                RaycastContext.ShapeType.OUTLINE,
+                RaycastContext.FluidHandling.NONE,
+                player
+        ));
 
-        // Determine the target position based on the raycast result
-        Vec3d targetPosition;
-        double dipDepth = 1.5; // Extend the laser into the ground by this depth
-        if (hitResult.getType() == BlockHitResult.Type.BLOCK) {
-            targetPosition = hitResult.getPos().subtract(0, dipDepth, 0); // Offset the target downwards
-        } else {
-            targetPosition = new Vec3d(startPos.x, 0.0, startPos.z);
+        if (hitResult.getType() == HitResult.Type.MISS) {
+            return;
         }
 
-        // Calculate total vertical distance from start to target
-        double totalDistance = startY - targetPosition.y;
-        int numberOfBlocks = Math.max((int) (totalDistance), 50); // Dynamic block count with minimum of 5 blocks
-        double blockSpacing = totalDistance / (numberOfBlocks - 1);
-        double glassSpacingOffset = blockSpacing * 0.5;
+        Vec3d hitPos = hitResult.getPos();
 
-        // Create an ElementHolder for the laser
+        double randomHeight = MIN_HEIGHT + random.nextDouble() * (MAX_HEIGHT - MIN_HEIGHT);
+        double randomAngle = random.nextDouble() * Math.PI * 2;
+        double radius = random.nextDouble() * 20.0;
+
+        Vec3d startPos = new Vec3d(
+                hitPos.x + Math.cos(randomAngle) * radius,
+                randomHeight,
+                hitPos.z + Math.sin(randomAngle) * radius
+        );
+
+        double dipDepth = 1.5;
+        Vec3d targetPosition = hitPos.add(0, -dipDepth, 0);
+
+        double totalDistance = startPos.distanceTo(targetPosition);
+        int numberOfBlocks = Math.max((int) (totalDistance * 4), 100);
+        int numberOfGlassBlocks = numberOfBlocks / 2;
+
         ElementHolder holder = new ElementHolder();
 
-        // Create the laser blocks
-        for (int i = 0; i < numberOfBlocks; i++) {
-            BlockDisplayElement laserElement = new BlockDisplayElement();
-            laserElement.setBlockState(Blocks.LIGHT_BLUE_WOOL.getDefaultState()); // Replace with your desired laser block state
-
-            // Calculate the position for the current laser block
-            double laserY = startY - i * blockSpacing; // Position the laser block
-            Vec3d laserPos = new Vec3d(startPos.x+0.25, Math.max(laserY+0.25, targetPosition.y), startPos.z+0.25); // Ensure it does not exceed target Y
-            laserElement.setOverridePos(laserPos); // Set position of laser block
-
-            holder.addElement(laserElement);
-        }
-
-        // Create the wrapping glass blocks
-        for (int i = 0; i < numberOfBlocks; i++) {
+        // Create glass blocks first
+        for (int i = 0; i < numberOfGlassBlocks; i++) {
             BlockDisplayElement glassElement = new BlockDisplayElement();
-            glassElement.setBlockState(Blocks.WHITE_STAINED_GLASS.getDefaultState()); // Use glass block
+            glassElement.setBlockState(Blocks.WHITE_STAINED_GLASS.getDefaultState());
 
-            double glassY = startY - i * (blockSpacing + glassSpacingOffset);
-            Vec3d glassPos = new Vec3d(startPos.x, Math.max(glassY, targetPosition.y) + 0.5, startPos.z);
+            double progress = (double) i / (numberOfGlassBlocks - 1);
+            Vec3d pos = startPos.lerp(targetPosition, progress);
 
-            glassElement.setOverridePos(glassPos); // Set position of glass block
+            // Minimal offset for glass
+            double offsetAmount = 0.02;
+            Vec3d offset = new Vec3d(
+                    random.nextDouble() * offsetAmount - offsetAmount/2,
+                    random.nextDouble() * offsetAmount - offsetAmount/2,
+                    random.nextDouble() * offsetAmount - offsetAmount/2
+            );
 
-            // Scale the glass to be slightly larger than the laser
-            glassElement.setScale(new Vector3f(1.5f, 1.5f, 1.5f)); // Slightly larger scale in X and Z
+            glassElement.setScale(new Vector3f(1.0f, 1.0f, 1.0f));
+            // Center the glass blocks
+            glassElement.setOverridePos(pos.add(offset).add(0.5, 0.5, 0.5));
 
             holder.addElement(glassElement);
         }
 
-        // Attach the holder to the world at the starting position
+        // Create wool blocks
+        for (int i = 0; i < numberOfBlocks; i++) {
+            BlockDisplayElement laserElement = new BlockDisplayElement();
+            laserElement.setBlockState(Blocks.LIGHT_BLUE_WOOL.getDefaultState());
+
+            double progress = (double) i / (numberOfBlocks - 1);
+            Vec3d pos = startPos.lerp(targetPosition, progress);
+
+            // Very small offset for tighter beam
+            double offsetAmount = 0.03;
+            Vec3d offset = new Vec3d(
+                    random.nextDouble() * offsetAmount - offsetAmount/2,
+                    random.nextDouble() * offsetAmount - offsetAmount/2,
+                    random.nextDouble() * offsetAmount - offsetAmount/2
+            );
+
+            laserElement.setScale(new Vector3f(0.5f, 0.5f, 0.5f));
+            // Center the wool blocks in the glass
+            laserElement.setOverridePos(pos.add(offset).add(0.85, 1, 0.85));
+
+            holder.addElement(laserElement);
+        }
+
         BlockPos holderPos = new BlockPos((int) startPos.x, (int) startPos.y, (int) startPos.z);
         ChunkAttachment.ofTicking(holder, (ServerWorld) world, holderPos);
     }
