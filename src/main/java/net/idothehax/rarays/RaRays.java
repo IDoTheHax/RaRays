@@ -5,6 +5,7 @@ import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.idothehax.rarays.item.RaRaySpawnerItem;
 import net.idothehax.rarays.laser.Laser;
+import net.idothehax.rarays.laser.LaserTicker;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
@@ -42,12 +43,7 @@ public class RaRays implements ModInitializer {
         RaRays.LOGGER.info("Initializing Ra Rays");
         PolymerItemGroupUtils.registerPolymerItemGroup(Identifier.of(RaRays.MOD_ID, "ras_things"), ITEM_GROUP);
 
-        ServerTickEvents.END_WORLD_TICK.register(world -> {
-            // Update each laser
-            for (Laser laser : lasers) {
-                laser.updateOscillation();
-            }
-        });
+        LaserTicker.register();
     }
 
     private static <T extends Item> T registerItem(String id, T item) {
