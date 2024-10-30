@@ -46,6 +46,8 @@ public class Laser {
     private Vec3d targetPosition;
     private Vec3d lastElementPosition;
     private boolean isFinished = false;
+    private boolean hasImpacted = false;
+    private boolean hasBurnStarted = false;
 
     public Laser(World world, PlayerEntity player) {
         this.world = world;
@@ -181,8 +183,10 @@ public class Laser {
 
         // Check if the laser has reached the ground and wool elements are finished spawning
         if (!isDespawning && !glassElements.isEmpty() && lastElementPosition != null) {
-            if (lastElementPosition.y <= targetPosition.y && spawnIndex >= laserElements.size()) {
-                startDespawn();
+            if (lastElementPosition.y <= targetPosition.y + 1) {
+                hasImpacted = true;
+                FlashBurn.createBurnEffect(world, targetPosition, player);
+                hasBurnStarted = true;
             }
         }
     }
@@ -220,9 +224,6 @@ public class Laser {
             }
         }
     }
-
-
-
 
     private void startDespawn() {
         isDespawning = true;
