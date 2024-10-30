@@ -32,23 +32,22 @@ public class Laser {
     private int glassSpawnIndex = 0; // Index for spawning glass
     private int laserSpawnIndex = 0; // Index for spawning wool
 
+    private LaserExplosion explosion;
     private final List<BlockDisplayElement> glassElements = new ArrayList<>();
     private final List<BlockDisplayElement> laserElements = new ArrayList<>();
     private final List<BlockDisplayElement> activeGlassElements = new ArrayList<>();
     private final List<BlockDisplayElement> activeLaserElements = new ArrayList<>();
 
-    private boolean hasFired = false; // New flag to track if the laser has fired
+    // New flag to track if the laser has fired
     private ElementHolder holder;
     private float oscillationTime = 0.0f;
-    private int spawnIndex = 0;
     private boolean isSpawning = false;
     private boolean isDespawning = false;
     private int despawnIndex = 0;
     private Vec3d targetPosition;
     private Vec3d lastElementPosition;
     private boolean isFinished = false;
-    private boolean hasImpacted = false;
-    private boolean hasBurnStarted = false;
+    private boolean explosionStarted = false;
 
     public Laser(World world, PlayerEntity player) {
         this.world = world;
@@ -99,7 +98,6 @@ public class Laser {
         int numberOfGlassBlocks = numberOfBlocks / 2;
 
         holder = new ElementHolder();
-        hasFired = true;
 
         // Create all blocks but don't show them yet
         createBlocks(startPos, numberOfGlassBlocks, numberOfBlocks);
@@ -109,7 +107,6 @@ public class Laser {
 
         // Start the spawn animation
         isSpawning = true;
-        spawnIndex = 0;
 
         LaserTicker.addLaser(this);
 
@@ -190,15 +187,36 @@ public class Laser {
         }
 
         if (!isSpawning) {
-            if (lastElementPosition.y <= targetPosition.y + 1) {
-                hasImpacted = true;
-                FlashBurn.createBurnEffect(world, targetPosition, player);
-                hasBurnStarted = true;
+            System.out.println("Debug - Not spawning");
+            if (lastElementPosition != null) {
+                System.out.println("Debug - Last Element Y: " + lastElementPosition.y);
+                System.out.println("Debug - Target Y + 1: " + (targetPosition.y + 1));
 
-                // Reset hasFired to prevent multiple burn effects
-                hasFired = false; // Prevent triggering again unless a new laser is fired
+                if (lastElementPosition.y <= targetPosition.y + 1) {
+                    System.out.println("Debug - Height condition met");
+                    if (!explosionStarted) {
+                        System.out.println("Debug - Creating explosion");
+                        explosion = new LaserExplosion(world, targetPosition, holder);
+                        explosionStarted = true;
+                    }
+
+                    FlashBurn.createBurnEffect(world, targetPosition, player);
+                }
+            } else {
+                System.out.println("Debug - lastElementPosition is null");
             }
         }
+
+        if (explosion != null) {
+            System.out.println("Debug - Updating explosion");
+            explosion.update();
+
+            if (explosion.isFinished() && !isDespawning) {
+                System.out.println("Debug - Starting despawn");
+                startDespawn();
+            }
+        }
+
     }
 
 
@@ -269,6 +287,12 @@ public class Laser {
         activeGlassElements.clear();
         activeLaserElements.clear();
         lastElementPosition = null;
+
+        if (explosion != null) {
+            explosion.cleanup();
+            explosion = null;
+        }
+
         isFinished = true;  // Mark the laser as finished
     }
 
