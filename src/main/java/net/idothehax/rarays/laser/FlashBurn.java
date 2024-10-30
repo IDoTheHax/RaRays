@@ -3,10 +3,16 @@ package net.idothehax.rarays.laser;
 import net.minecraft.block.*;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.fluid.Fluids;
+import net.minecraft.item.ItemPlacementContext;
+import net.minecraft.registry.Registries;
+import net.minecraft.registry.tag.BlockTags;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.state.property.Properties;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.RaycastContext;
@@ -22,36 +28,65 @@ public class FlashBurn {
     private static final Map<Block, BlockState[]> BURN_TRANSFORMATIONS = new HashMap<>();
 
     static {
-        // blok transformations burning effect
-        BURN_TRANSFORMATIONS.put(Blocks.OAK_LEAVES, new BlockState[]{
-                Blocks.MANGROVE_ROOTS.getDefaultState(),
-                Blocks.AIR.getDefaultState()
+        // Register transformations for all leaf blocks using tags
+        Registries.BLOCK.forEach(block -> {
+            if (block.getDefaultState().isIn(BlockTags.LEAVES)) {
+                BURN_TRANSFORMATIONS.put(block, new BlockState[]{
+                        Blocks.MANGROVE_ROOTS.getDefaultState(),
+                        Blocks.AIR.getDefaultState()
+                });
+            }
         });
 
+        // Register transformations for all log and wood blocks using tags
+        Registries.BLOCK.forEach(block -> {
+            if (block.getDefaultState().isIn(BlockTags.LOGS) ||
+                    block.getDefaultState().isIn(BlockTags.WOODEN_FENCES) ||
+                    block.getDefaultState().isIn(BlockTags.PLANKS)) {
+                BURN_TRANSFORMATIONS.put(block, new BlockState[]{
+                        Blocks.MAGMA_BLOCK.getDefaultState(),
+                        Blocks.COAL_BLOCK.getDefaultState()
+                });
+            }
+        });
+
+        // Other specific block transformations
         BURN_TRANSFORMATIONS.put(Blocks.GRASS_BLOCK, new BlockState[]{
+                Blocks.COARSE_DIRT.getDefaultState(),
                 Blocks.ROOTED_DIRT.getDefaultState(),
-                Blocks.TUFF.getDefaultState()
+                Blocks.TUFF.getDefaultState(),
+                Blocks.MAGMA_BLOCK.getDefaultState()
         });
 
         BURN_TRANSFORMATIONS.put(Blocks.DIRT, new BlockState[]{
+                Blocks.COARSE_DIRT.getDefaultState(),
                 Blocks.ROOTED_DIRT.getDefaultState(),
-                Blocks.TUFF.getDefaultState()
+                Blocks.TUFF.getDefaultState(),
+                Blocks.MAGMA_BLOCK.getDefaultState()
         });
 
-        BURN_TRANSFORMATIONS.put(Blocks.OAK_WOOD, new BlockState[]{
-                Blocks.BASALT.getDefaultState()
-        });
-
-        BURN_TRANSFORMATIONS.put(Blocks.OAK_LOG, new BlockState[]{
-                Blocks.BASALT.getDefaultState()
+        BURN_TRANSFORMATIONS.put(Blocks.STONE, new BlockState[]{
+                Blocks.TUFF.getDefaultState(),
+                Blocks.ANDESITE.getDefaultState(),
+                Blocks.DEEPSLATE.getDefaultState(),
+                Blocks.OBSIDIAN.getDefaultState(),
+                Blocks.MAGMA_BLOCK.getDefaultState()
         });
 
         BURN_TRANSFORMATIONS.put(Blocks.SHORT_GRASS, new BlockState[]{
+                Blocks.AIR.getDefaultState(),
                 Blocks.DEAD_BUSH.getDefaultState(),
-                Blocks.AIR.getDefaultState()
+                //Blocks.DEAD_BRAIN_CORAL_FAN.getDefaultState()
+                //        .with(Properties.FACING, Direction.UP)
+                //        .with(Properties.WATERLOGGED, false),
+        });
+
+        BURN_TRANSFORMATIONS.put(Blocks.TALL_GRASS, new BlockState[]{
+                Blocks.AIR.getDefaultState(),
+                Blocks.DEAD_BUSH.getDefaultState(),
+                //Blocks.DEAD_BRAIN_CORAL_FAN.getDefaultState()
         });
     }
-
     public static void createBurnEffect(World world, Vec3d impactPos, PlayerEntity player) {
         // Move the burn effect 3 blocks over impact
         Vec3d burnOrigin = impactPos.add(0, 3, 0);
