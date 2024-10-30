@@ -37,6 +37,7 @@ public class Laser {
     private final List<BlockDisplayElement> activeGlassElements = new ArrayList<>();
     private final List<BlockDisplayElement> activeLaserElements = new ArrayList<>();
 
+    private boolean hasFired = false; // New flag to track if the laser has fired
     private ElementHolder holder;
     private float oscillationTime = 0.0f;
     private int spawnIndex = 0;
@@ -98,6 +99,7 @@ public class Laser {
         int numberOfGlassBlocks = numberOfBlocks / 2;
 
         holder = new ElementHolder();
+        hasFired = true;
 
         // Create all blocks but don't show them yet
         createBlocks(startPos, numberOfGlassBlocks, numberOfBlocks);
@@ -110,6 +112,7 @@ public class Laser {
         spawnIndex = 0;
 
         LaserTicker.addLaser(this);
+
     }
 
     private void createBlocks(Vec3d startPos, int numberOfGlassBlocks, int numberOfBlocks) {
@@ -178,15 +181,22 @@ public class Laser {
         }
 
         if (!isSpawning && !isDespawning) {
+
             updateOscillation();
         }
 
         // Check if the laser has reached the ground and wool elements are finished spawning
-        if (!isDespawning && !glassElements.isEmpty() && lastElementPosition != null) {
+        if (!isDespawning && !glassElements.isEmpty() && lastElementPosition == null) {
+        }
+
+        if (!isSpawning) {
             if (lastElementPosition.y <= targetPosition.y + 1) {
                 hasImpacted = true;
                 FlashBurn.createBurnEffect(world, targetPosition, player);
                 hasBurnStarted = true;
+
+                // Reset hasFired to prevent multiple burn effects
+                hasFired = false; // Prevent triggering again unless a new laser is fired
             }
         }
     }
