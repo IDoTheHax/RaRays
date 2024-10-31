@@ -3,6 +3,7 @@ package net.idothehax.rarays.laser;
 import eu.pb4.polymer.virtualentity.api.ElementHolder;
 import eu.pb4.polymer.virtualentity.api.elements.BlockDisplayElement;
 import net.minecraft.block.Block;
+import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
@@ -13,6 +14,8 @@ import org.joml.Vector3f;
 import net.minecraft.util.math.random.Random;
 
 import java.util.*;
+
+import static net.idothehax.rarays.laser.FlashBurn.BURN_TRANSFORMATIONS;
 
 public class LaserExplosion {
     private final List<Particle> explosionParticles = new ArrayList<>();
@@ -94,7 +97,6 @@ public class LaserExplosion {
         };
 
         int burnParticleCount = 9; // Control the number of burn particles
-        float burnRadius = 15.0f; // Smaller radius for burn particles
 
         // Get the ground level at the explosion center using the appropriate heightmap
         int groundLevel = world.getTopY(Heightmap.Type.MOTION_BLOCKING,
@@ -128,6 +130,31 @@ public class LaserExplosion {
             element.setOverridePos(center.add(initialOffset.add(new Vec3d(0, groundLevel + 0.5, 0))));
             burnParticles.add(new Particle(element, initialOffset));
             holder.addElement(element);
+        }
+    }
+
+    private void burnBlocksInRadius(BlockPos blockPos, float particleBurnRadius) {
+        // Iterate over a small area around the particle position
+        int radius = (int) Math.ceil(particleBurnRadius);
+
+        for (int x = -radius; x <= radius; x++) {
+            for (int y = -radius; y <= radius; y++) {
+                for (int z = -radius; z <= radius; z++) {
+                    BlockPos targetPos = blockPos.add(x, y, z);
+
+                    // Check if the block is within the particleBurnRadius from the particle's position
+                    if (targetPos.isWithinDistance(blockPos, particleBurnRadius)) {
+                        Block currentBlock = world.getBlockState(targetPos).getBlock();
+
+                        BlockState[] transformations = BURN_TRANSFORMATIONS.get(currentBlock);
+                        // Burn only if the current block is in the burnable list
+                        if (transformations != null) {
+                            BlockState newState = transformations[random.nextInt(transformations.length)];
+                            world.setBlockState(targetPos, newState);
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -168,6 +195,9 @@ public class LaserExplosion {
             expansionProgress += EXPANSION_RATE;
             float currentRadius = Math.min(MAX_RADIUS, expansionProgress);
 
+            // Set the detection radius around each particle for burn checks
+            float particleBurnRadius = 10.5f;
+
             // Update each particle's scale and position
             for (Particle particle : explosionParticles) {
                 BlockDisplayElement element = particle.element;
@@ -178,6 +208,13 @@ public class LaserExplosion {
 
                 // Calculate new position
                 Vec3d newPosition = center.add(particle.initialOffset.normalize().multiply(currentRadius));
+
+                // Check for burning blocks in the particle's path
+                BlockPos blockPos = new BlockPos((int) newPosition.x, (int) newPosition.y, (int) newPosition.z);
+                if (world.isChunkLoaded(blockPos) && !world.isAir(blockPos)) {
+                    // Transform the block to its burned variant if possible
+                    burnBlocksInRadius(blockPos, particleBurnRadius);
+                }
 
                 // Update particle position and scale
                 element.setOverridePos(newPosition);

@@ -25,7 +25,7 @@ import java.util.Random;
 public class FlashBurn {
     private static final int BURN_RADIUS = 14;
     private static final double RAY_DENSITY = 0.5;
-    private static final Map<Block, BlockState[]> BURN_TRANSFORMATIONS = new HashMap<>();
+    public static final Map<Block, BlockState[]> BURN_TRANSFORMATIONS = new HashMap<>();
 
     static {
         // Register transformations for all leaf blocks using tags
@@ -46,6 +46,18 @@ public class FlashBurn {
                 BURN_TRANSFORMATIONS.put(block, new BlockState[]{
                         Blocks.MAGMA_BLOCK.getDefaultState(),
                         Blocks.COAL_BLOCK.getDefaultState()
+                });
+            }
+        });
+
+        // Register transformations for all flowers
+        Registries.BLOCK.forEach(block -> {
+            if (block.getDefaultState().isIn(BlockTags.FLOWERS) ||
+                    block.getDefaultState().isIn(BlockTags.SMALL_FLOWERS) ||
+                    block.getDefaultState().isIn(BlockTags.TALL_FLOWERS)) {
+                BURN_TRANSFORMATIONS.put(block, new BlockState[]{
+                        Blocks.AIR.getDefaultState(),
+                        Blocks.DEAD_BUSH.getDefaultState()
                 });
             }
         });
