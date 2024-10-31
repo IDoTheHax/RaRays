@@ -187,32 +187,21 @@ public class Laser {
         }
 
         if (!isSpawning) {
-            System.out.println("Debug - Not spawning");
             if (lastElementPosition != null) {
-                System.out.println("Debug - Last Element Y: " + lastElementPosition.y);
-                System.out.println("Debug - Target Y + 1: " + (targetPosition.y + 1));
-
                 if (lastElementPosition.y <= targetPosition.y + 1) {
-                    System.out.println("Debug - Height condition met");
                     if (!explosionStarted) {
-                        System.out.println("Debug - Creating explosion");
                         explosion = new LaserExplosion(world, targetPosition, holder);
                         explosionStarted = true;
                     }
 
                     FlashBurn.createBurnEffect(world, targetPosition, player);
                 }
-            } else {
-                System.out.println("Debug - lastElementPosition is null");
             }
         }
 
         if (explosion != null) {
-            System.out.println("Debug - Updating explosion");
             explosion.update();
-
             if (explosion.isFinished() && !isDespawning) {
-                System.out.println("Debug - Starting despawn");
                 startDespawn();
             }
         }
