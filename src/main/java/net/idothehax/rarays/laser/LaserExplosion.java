@@ -2,7 +2,9 @@ package net.idothehax.rarays.laser;
 
 import eu.pb4.polymer.virtualentity.api.ElementHolder;
 import eu.pb4.polymer.virtualentity.api.elements.BlockDisplayElement;
+import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.Heightmap;
 import net.minecraft.world.World;
@@ -10,8 +12,7 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import net.minecraft.util.math.random.Random;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class LaserExplosion {
     private final List<Particle> explosionParticles = new ArrayList<>();
@@ -20,7 +21,7 @@ public class LaserExplosion {
     private final World world;
     private float expansionProgress = 0;
     private static final float EXPANSION_RATE = 0.8f; // Faster expansion rate
-    private static final float MAX_RADIUS = 50.0f;
+    private static final float MAX_RADIUS = 120.0f;
     private static final int PARTICLES_PER_RING = 96;
     private static final int NUMBER_OF_RINGS = 3;
     private final Random random;
@@ -39,10 +40,10 @@ public class LaserExplosion {
     private void createExplosionParticles() {
         var explosionBlocks = new net.minecraft.block.Block[]{
                 Blocks.ORANGE_STAINED_GLASS,
-                Blocks.YELLOW_STAINED_GLASS,
-                Blocks.RED_STAINED_GLASS,
-                Blocks.GRAY_STAINED_GLASS,
-                Blocks.BLACK_STAINED_GLASS
+                Blocks.TERRACOTTA,
+                Blocks.ORANGE_CONCRETE,
+                Blocks.HONEYCOMB_BLOCK,
+                Blocks.SHROOMLIGHT
         };
 
 
@@ -130,6 +131,37 @@ public class LaserExplosion {
         }
     }
 
+    private void fadeBlocks() {
+        List<Block> fadeSequence = Arrays.asList(
+                Blocks.ORANGE_STAINED_GLASS,
+                Blocks.BLACK_STAINED_GLASS,
+                Blocks.GRAY_STAINED_GLASS,
+                Blocks.WHITE_STAINED_GLASS
+        );
+
+        // Iterate over a square area defined by the explosion radius
+        int radius = (int) MAX_RADIUS;
+        BlockPos centerPos = new BlockPos((int) center.x, (int) center.y, (int) center.z);
+
+        for (int x = -radius; x <= radius; x++) {
+            for (int y = -radius; y <= radius; y++) {
+                for (int z = -radius; z <= radius; z++) {
+                    BlockPos targetPos = centerPos.add(x, y, z);
+                    if (targetPos.isWithinDistance(centerPos, radius)) {
+                        Block currentBlock = world.getBlockState(targetPos).getBlock();
+
+                        // Check if the current block is in the fade sequence
+                        int currentIndex = fadeSequence.indexOf(currentBlock);
+                        if (currentIndex != -1 && currentIndex < fadeSequence.size() - 1) {
+                            // Replace with the next block in the fade sequence
+                            Block nextBlock = fadeSequence.get(currentIndex + 1);
+                            world.setBlockState(targetPos, nextBlock.getDefaultState(), 3);
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     public void update() {
         if (isExpanding) {
@@ -139,6 +171,7 @@ public class LaserExplosion {
             // Update each particle's scale and position
             for (Particle particle : explosionParticles) {
                 BlockDisplayElement element = particle.element;
+
 
                 // Scale should increase as it expands
                 float scale = 2.3f + (currentRadius / MAX_RADIUS); // Adjusted scale for smaller blocks
@@ -165,8 +198,10 @@ public class LaserExplosion {
                 }
             }
 
+
             // Stop expanding when maximum size is reached
             if (currentRadius >= MAX_RADIUS) {
+                fadeBlocks();
                 isExpanding = false;
             }
         }
