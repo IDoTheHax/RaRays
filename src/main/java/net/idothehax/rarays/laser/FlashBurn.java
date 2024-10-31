@@ -76,17 +76,32 @@ public class FlashBurn {
         BURN_TRANSFORMATIONS.put(Blocks.SHORT_GRASS, new BlockState[]{
                 Blocks.AIR.getDefaultState(),
                 Blocks.DEAD_BUSH.getDefaultState(),
-                //Blocks.DEAD_BRAIN_CORAL_FAN.getDefaultState()
-                //        .with(Properties.FACING, Direction.UP)
-                //        .with(Properties.WATERLOGGED, false),
+                Blocks.DEAD_BRAIN_CORAL_FAN.getDefaultState().with(Properties.WATERLOGGED, false),
+        });
+
+        BURN_TRANSFORMATIONS.put(Blocks.FERN, new BlockState[]{
+                Blocks.AIR.getDefaultState(),
+                Blocks.DEAD_BUSH.getDefaultState(),
+                Blocks.DEAD_BRAIN_CORAL_FAN.getDefaultState().with(Properties.WATERLOGGED, false),
         });
 
         BURN_TRANSFORMATIONS.put(Blocks.TALL_GRASS, new BlockState[]{
                 Blocks.AIR.getDefaultState(),
                 Blocks.DEAD_BUSH.getDefaultState(),
-                //Blocks.DEAD_BRAIN_CORAL_FAN.getDefaultState()
+                Blocks.DEAD_BRAIN_CORAL_FAN.getDefaultState().with(Properties.WATERLOGGED, false),
+        });
+
+        BURN_TRANSFORMATIONS.put(Blocks.LARGE_FERN, new BlockState[]{
+                Blocks.AIR.getDefaultState(),
+                Blocks.DEAD_BUSH.getDefaultState(),
+                Blocks.DEAD_BRAIN_CORAL_FAN.getDefaultState().with(Properties.WATERLOGGED, false),
+        });
+
+        BURN_TRANSFORMATIONS.put(Blocks.VINE, new BlockState[]{
+                Blocks.AIR.getDefaultState(),
         });
     }
+
     public static void createBurnEffect(World world, Vec3d impactPos, PlayerEntity player) {
         // Move the burn effect 3 blocks over impact
         Vec3d burnOrigin = impactPos.add(0, 3, 0);
