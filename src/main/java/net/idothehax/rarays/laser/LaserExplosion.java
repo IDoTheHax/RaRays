@@ -6,6 +6,10 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.damage.DamageEffects;
+import net.minecraft.entity.damage.DamageSource;
+import net.minecraft.entity.damage.DamageType;
+import net.minecraft.entity.damage.DamageTypes;
 import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.math.BlockPos;
@@ -250,7 +254,6 @@ public class LaserExplosion {
             for (Particle particle : explosionParticles) {
                 BlockDisplayElement element = particle.element;
 
-
                 // Scale should increase as it expands
                 float scale = 2.3f + (currentRadius / MAX_RADIUS); // Adjusted scale for smaller blocks
 
@@ -262,6 +265,23 @@ public class LaserExplosion {
                 if (world.isChunkLoaded(blockPos) && !world.isAir(blockPos)) {
                     // Transform the block to its burned variant if possible
                     burnBlocksInRadius(blockPos, particleBurnRadius);
+                }
+
+                double entityBurnRadius = 3.0; // Adjust this radius as needed
+                List<LivingEntity> entities = world.getEntitiesByClass(
+                        LivingEntity.class,
+                        new Box(newPosition.x - entityBurnRadius, newPosition.y - entityBurnRadius, newPosition.z - entityBurnRadius,
+                                newPosition.x + entityBurnRadius, newPosition.y + entityBurnRadius, newPosition.z + entityBurnRadius),
+                        entity -> !entity.isFireImmune()
+                );
+
+                for (LivingEntity entity : entities) {
+                    // Ignite
+                    entity.setFireTicks(entity.getFireTicks() + 1);
+                    if (entity.getFireTicks() == 0) {
+                        entity.setOnFireFor(8);
+                    }
+                    entity.damage(world.getDamageSources().inFire(), 1.0F);
                 }
 
                 // Update particle position and scale
