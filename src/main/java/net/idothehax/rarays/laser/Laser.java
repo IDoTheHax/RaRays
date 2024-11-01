@@ -1,6 +1,8 @@
 package net.idothehax.rarays.laser;
 
 import net.idothehax.rarays.RaRays;
+import net.minecraft.entity.effect.StatusEffectInstance;
+import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
@@ -189,9 +191,7 @@ public class Laser {
             updateOscillation();
         }
 
-        // Check if the laser has reached the ground and wool elements are finished spawning
         if (!isDespawning && !glassElements.isEmpty() && lastElementPosition == null) {
-
         }
 
         if (!isSpawning) {
@@ -266,6 +266,7 @@ public class Laser {
                 BlockDisplayElement glassElement = glassElements.get(glassSpawnIndex);
                 glassElement.setScale(new Vector3f(1.0f, 1.0f, 1.0f));
                 activeGlassElements.add(glassElement);
+                clearNearbyBlocks(glassElement);
                 glassSpawnIndex++;
                 blocksSpawnedThisTick++;
             }
@@ -275,6 +276,7 @@ public class Laser {
                 BlockDisplayElement laserElement = laserElements.get(laserSpawnIndex);
                 laserElement.setScale(new Vector3f(0.5f, 0.5f, 0.5f));
                 activeLaserElements.add(laserElement);
+                clearNearbyBlocks(laserElement);
                 laserSpawnIndex++;
                 blocksSpawnedThisTick++;
             }
@@ -282,7 +284,7 @@ public class Laser {
             // If both have reached their limit, stop spawning
             if (glassSpawnIndex >= glassElements.size() && laserSpawnIndex >= laserElements.size()) {
                 isSpawning = false;
-                // TODO cool explosion stuff here
+                player.addStatusEffect(new StatusEffectInstance(StatusEffects.NIGHT_VISION, 600, 0, false, false, true));
                 break;
             }
         }
@@ -328,6 +330,7 @@ public class Laser {
             explosion = null;
         }
 
+        player.removeStatusEffect(StatusEffects.NIGHT_VISION);
         isFinished = true;  // Mark the laser as finished
     }
 
@@ -342,6 +345,24 @@ public class Laser {
 
         for (BlockDisplayElement laserElement : activeLaserElements) {
             laserElement.setScale(new Vector3f((float) (0.5 * scale), (float) (0.5 * scale), (float) (0.5 * scale)));
+        }
+    }
+
+    private void clearNearbyBlocks(BlockDisplayElement element) {
+        // Get the position of the block display element
+        BlockPos pos = BlockPos.ofFloored(element.getCurrentPos());
+
+        // Clear blocks in a radius of 3
+        for (int dx = -3; dx <= 3; dx++) {
+            for (int dy = -3; dy <= 3; dy++) {
+                for (int dz = -3; dz <= 3; dz++) {
+                    BlockPos nearbyPos = pos.add(dx, dy, dz);
+                    if (world.getBlockState(nearbyPos).isSolidBlock(world, nearbyPos)) {
+                        // Set block to air if it is solid
+                        world.setBlockState(nearbyPos, Blocks.AIR.getDefaultState());
+                    }
+                }
+            }
         }
     }
 }
