@@ -1,5 +1,6 @@
 package net.idothehax.rarays.laser;
 
+import net.idothehax.rarays.RaRays;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
@@ -184,16 +185,37 @@ public class Laser {
 
         // Check if the laser has reached the ground and wool elements are finished spawning
         if (!isDespawning && !glassElements.isEmpty() && lastElementPosition == null) {
+            RaRays.LOGGER.info("Updated laser elements");
         }
 
         if (!isSpawning) {
+            RaRays.LOGGER.info("Not spawning laser elements");
             if (lastElementPosition != null) {
-                if (lastElementPosition.y <= targetPosition.y + 1) {
+                boolean shouldExplode = false;
+
+                for (int dx = -3; dx <= 3; dx++) {
+                    for (int dy = -3; dy <= 3; dy++) {
+                        for (int dz = -3; dz <= 3; dz++) {
+                            BlockPos nearbyPosition = BlockPos.ofFloored(targetPosition.add(dx, dy, dz));
+
+                            // Check if this nearby position meets the condition for an explosion
+                            if (lastElementPosition.y <= nearbyPosition.getY() + 1) {
+                                shouldExplode = true;
+                                break; // Exit the loop if any nearby position satisfies the condition
+                            }
+                        }
+                        if (shouldExplode) break;
+                    }
+                    if (shouldExplode) break;
+                }
+
+                if (shouldExplode) {
                     if (!explosionStarted) {
                         explosion = new LaserExplosion(world, targetPosition, holder);
                         explosionStarted = true;
                     }
 
+                    // Trigger the burn effect at the main target position
                     FlashBurn.createBurnEffect(world, targetPosition, player);
                 }
             }
