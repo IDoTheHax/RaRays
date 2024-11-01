@@ -25,7 +25,7 @@ public class Laser {
     private final Random random;
     private static final double MAX_DISTANCE = 100.0;
     private static final double MAX_HEIGHT = 200.0;
-    private static final double MIN_HEIGHT = 100.0;
+    private Vec3d direction;
     private static final float OSCILLATION_AMPLITUDE = 0.3f;
     private static final double OSCILLATION_SPEED = 0.03f;
     private static final int TOTAL_SPAWN_RATE = 16; // Number of blocks to spawn per tick
@@ -50,10 +50,14 @@ public class Laser {
     private boolean isFinished = false;
     private boolean explosionStarted = false;
 
+    private static final double SATELLITE_SPEED = 0.08; // Speed of the satellite's motion
+    private double elapsedTime = 0.0; // Time to track the movement
+
     public Laser(World world, PlayerEntity player) {
         this.world = world;
         this.player = player;
         this.random = Random.create();
+        this.direction = new Vec3d(1, 0, 0); // Example: Move in the +X direction
     }
 
     public boolean isFinished() {
@@ -61,6 +65,9 @@ public class Laser {
     }
 
     public void spawnLaser() {
+        // Increment elapsed time
+        elapsedTime += SATELLITE_SPEED;
+
         // Calculate hit position
         Vec3d lookVec = player.getRotationVec(1.0F);
         Vec3d eyePos = player.getEyePos();
@@ -80,8 +87,8 @@ public class Laser {
 
         Vec3d hitPos = hitResult.getPos();
 
-        // Calculate start position
-        double height = 200;
+        // Calculate the moving start position
+        double height = MAX_HEIGHT - (Math.sin(elapsedTime) * 50); // Simulate movement in height
         double randomAngle = random.nextDouble() * Math.PI * 2;
         double radius = random.nextDouble() * 20.0;
 
@@ -92,7 +99,7 @@ public class Laser {
         );
 
         double dipDepth = 1.5;
-        targetPosition = hitPos.add(0, -dipDepth , 0);
+        targetPosition = hitPos.add(0, -dipDepth, 0);
 
         double totalDistance = startPos.distanceTo(targetPosition);
         int numberOfBlocks = Math.max((int) (totalDistance * 4), 100);
@@ -110,7 +117,6 @@ public class Laser {
         isSpawning = true;
 
         LaserTicker.addLaser(this);
-
     }
 
     private void createBlocks(Vec3d startPos, int numberOfGlassBlocks, int numberOfBlocks) {
@@ -179,7 +185,7 @@ public class Laser {
         }
 
         if (!isSpawning && !isDespawning) {
-
+            moveLaser();
             updateOscillation();
         }
 
@@ -229,6 +235,25 @@ public class Laser {
 
     }
 
+    private void moveLaser() {
+        // Move the starting position and target position based on the direction
+        if (lastElementPosition != null) {
+            Vec3d displacement = direction.multiply(SATELLITE_SPEED);
+            lastElementPosition = lastElementPosition.add(displacement);
+            targetPosition = targetPosition.add(displacement);
+
+            // Update the positions of active elements to follow the new target position
+            for (BlockDisplayElement glassElement : activeGlassElements) {
+                Vec3d currentPos = glassElement.getOverridePos();
+                glassElement.setOverridePos(currentPos.add(displacement));
+            }
+
+            for (BlockDisplayElement laserElement : activeLaserElements) {
+                Vec3d currentPos = laserElement.getOverridePos();
+                laserElement.setOverridePos(currentPos.add(displacement));
+            }
+        }
+    }
 
     private void updateSpawn() {
         // Total blocks spawned this tick
