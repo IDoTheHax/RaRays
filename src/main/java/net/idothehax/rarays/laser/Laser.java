@@ -185,11 +185,10 @@ public class Laser {
 
         // Check if the laser has reached the ground and wool elements are finished spawning
         if (!isDespawning && !glassElements.isEmpty() && lastElementPosition == null) {
-            RaRays.LOGGER.info("Updated laser elements");
+
         }
 
         if (!isSpawning) {
-            RaRays.LOGGER.info("Not spawning laser elements");
             if (lastElementPosition != null) {
                 boolean shouldExplode = false;
 

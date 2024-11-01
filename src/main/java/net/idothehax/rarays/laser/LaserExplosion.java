@@ -6,14 +6,9 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.damage.DamageEffects;
-import net.minecraft.entity.damage.DamageSource;
-import net.minecraft.entity.damage.DamageType;
-import net.minecraft.entity.damage.DamageTypes;
-import net.minecraft.entity.mob.MobEntity;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
+import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.Heightmap;
 import net.minecraft.world.World;
@@ -250,6 +245,8 @@ public class LaserExplosion {
             // Set the detection radius around each particle for burn checks
             float particleBurnRadius = 1.5f;
 
+            clearBlocksAround(currentRadius / 6);
+
             // Update each particle's scale and position
             for (Particle particle : explosionParticles) {
                 BlockDisplayElement element = particle.element;
@@ -322,6 +319,57 @@ public class LaserExplosion {
                 isExpanding = false;
             }
         }
+    }
+
+    private void clearBlocksAround(float currentRadius) {
+        int radius = (int) Math.ceil(currentRadius);
+        BlockPos centerPos = new BlockPos((int) center.x, (int) center.y, (int) center.z);
+        Set<BlockPos> burningCandidates = new HashSet<>();
+
+        for (int x = -radius; x <= radius; x++) {
+            for (int y = -radius; y <= radius; y++) {
+                for (int z = -radius; z <= radius; z++) {
+                    BlockPos targetPos = centerPos.add(x, y, z);
+
+                    // Calculate the actual distance from the center
+                    double distance = Math.sqrt(centerPos.getSquaredDistance(targetPos));
+
+                    // Normalize the distance relative to the radius
+                    double normalizedDistance = distance / currentRadius;
+
+                    // Create a falloff effect - more destruction near the center, less at the edges
+                    // Use a quadratic falloff for a more natural crater shape
+                    double destructionIntensity = 1.0 - (normalizedDistance * normalizedDistance);
+
+                    // Only process blocks within the actual spherical radius
+                    if (distance <= currentRadius) {
+                        BlockState currentState = world.getBlockState(targetPos);
+                        Block currentBlock = currentState.getBlock();
+
+                        // Randomize destruction based on distance from center
+                        if (Math.random() < destructionIntensity) {
+                            world.setBlockState(targetPos, Blocks.AIR.getDefaultState(), 3);
+                            burningCandidates.add(targetPos);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Burn blocks exposed to air
+        for (BlockPos pos : burningCandidates) {
+            for (Direction direction : Direction.values()) {
+                BlockPos neighborPos = pos.offset(direction);
+                if (world.getBlockState(neighborPos).getBlock() != Blocks.AIR) {
+                    burnBlocksInRadius(neighborPos, 0.5f);
+                }
+            }
+        }
+    }
+
+    private boolean shouldBurn(Block block) {
+        // Define a condition to favor darker/hotter blocks for burning
+        return block == Blocks.NETHERRACK || block == Blocks.MAGMA_BLOCK || block == Blocks.OBSIDIAN;
     }
 
     private void applyKnockbackToEntities(Vec3d shockwavePosition, float shockwaveRadius) {
