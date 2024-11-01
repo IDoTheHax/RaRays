@@ -85,6 +85,23 @@ public class FlashBurn {
                 Blocks.MAGMA_BLOCK.getDefaultState()
         });
 
+        BURN_TRANSFORMATIONS.put(Blocks.GRANITE, new BlockState[]{
+                Blocks.TUFF.getDefaultState(),
+                Blocks.ANDESITE.getDefaultState(),
+                Blocks.DEEPSLATE.getDefaultState(),
+                Blocks.OBSIDIAN.getDefaultState(),
+                Blocks.MAGMA_BLOCK.getDefaultState()
+        });
+
+        BURN_TRANSFORMATIONS.put(Blocks.COAL_ORE, new BlockState[]{
+                Blocks.DIAMOND_ORE.getDefaultState(),
+                Blocks.DEEPSLATE_DIAMOND_ORE.getDefaultState(),
+        });
+
+        BURN_TRANSFORMATIONS.put(Blocks.IRON_ORE, new BlockState[]{
+                Blocks.RAW_IRON_BLOCK.getDefaultState(),
+        });
+
         BURN_TRANSFORMATIONS.put(Blocks.SHORT_GRASS, new BlockState[]{
                 Blocks.AIR.getDefaultState(),
                 Blocks.DEAD_BUSH.getDefaultState(),
