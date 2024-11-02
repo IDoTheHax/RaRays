@@ -1,5 +1,6 @@
 plugins {
     id 'fabric-loom' version '1.6-SNAPSHOT'
+    id "com.modrinth.minotaur" version "2.+"
     id 'maven-publish'
 }
 
@@ -95,5 +96,25 @@ publishing {
         // Notice: This block does NOT have the same function as the block in the top level.
         // The repositories here will be used for publishing your artifact, not for
         // retrieving dependencies.
+    }
+}
+
+modrinth {
+    // always run source ~/.bashrc before running modrinth
+    token = System.getenv("MODRINTH_TOKEN") // Remember to have the MODRINTH_TOKEN environment variable set or else this will fail - just make sure it stays private!
+    projectId = "rarays" // This can be the project ID or the slug. Either will work!
+    versionNumber = project.version // You don't need to set this manually. Will fail if Modrinth has this version already
+    versionType = "beta" // This is the default -- can also be `beta` or `alpha`
+    uploadFile = remapJar // With Loom, this MUST be set to `remapJar` instead of `jar`!
+    gameVersions = ["1.21"] // Must be an array, even with only one version
+    loaders = ["fabric"] // Must also be an array - no need to specify this if you're using Loom or ForgeGradle
+    changelog = System.getenv("CHANGELOG") ?: "No changelog provided"
+    dependencies { // A special DSL for creating dependencies
+        // scope.type
+        // The scope can be `required`, `optional`, `incompatible`, or `embedded`
+        // The type can either be `project` or `version`
+        required.project "fabric-api"
+        embedded.project "polymer"
+        optional.project ""
     }
 }
