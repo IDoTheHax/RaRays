@@ -1,4 +1,8 @@
 {
   "rarays.itemgroup": "Ra's Rays",
-  "item.rarays.ra_ray_spawner": "Ra's Rays Spawner"
+  "item.rarays.ra_ray_spawner": "Ra's Rays Spawner",
+  "item.rarays.slight_heated_amethyst": "Slightly Heated Amethyst",
+  "item.rarays.moderately_tempered_amethyst": "Moderatly Tempered Amethyst",
+  "item.rarays.annealed_amethyst": "Annealed Amethyst",
+  "item.rarays.glowing_hot_amethyst": "Glowing Hot Amethyst"
 }

@@ -1,8 +1,9 @@
 package net.idothehax.rarays;
 
 import eu.pb4.polymer.core.api.item.PolymerItemGroupUtils;
+import eu.pb4.polymer.resourcepack.api.PolymerResourcePackUtils;
 import net.fabricmc.api.ModInitializer;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.idothehax.rarays.item.RaRayCraftingItem;
 import net.idothehax.rarays.item.RaRaySpawnerItem;
 import net.idothehax.rarays.laser.Laser;
 import net.idothehax.rarays.laser.LaserTicker;
@@ -30,6 +31,12 @@ public class RaRays implements ModInitializer {
 
     public static final RaRaySpawnerItem RA_RAY_SPAWNER_ITEM = registerItem("ra_ray_spawner", new RaRaySpawnerItem(new Item.Settings().fireproof().maxCount(1), Items.AMETHYST_SHARD));
 
+    public static final RaRayCraftingItem SLIGHTLY_HEATED_AMETHYST = registerItem("slight_heated_amethyst", new RaRayCraftingItem(new Item.Settings().fireproof().maxCount(1), "slight_heated_amethyst"));
+    public static final RaRayCraftingItem MODERATELY_TEMPERED_AMETHYST = registerItem("moderately_tempered_amethyst", new RaRayCraftingItem(new Item.Settings().fireproof().maxCount(1), "moderately_tempered_amethyst"));
+    public static final RaRayCraftingItem ANNEALED_AMETHYST = registerItem("annealed_amethyst", new RaRayCraftingItem(new Item.Settings().fireproof().maxCount(1), "annealed_amethyst"));
+    public static final RaRayCraftingItem GLOWING_HOT_AMETHYST = registerItem("glowing_hot_amethyst", new RaRayCraftingItem(new Item.Settings().fireproof().maxCount(1), "glowing_hot_amethyst"));
+
+
     public static final ItemGroup ITEM_GROUP = new ItemGroup.Builder(null, -1)
             .displayName(Text.translatable("rarays.itemgroup").formatted(Formatting.AQUA))
             .icon(()-> new ItemStack(RA_RAY_SPAWNER_ITEM))
@@ -42,7 +49,7 @@ public class RaRays implements ModInitializer {
     public void onInitialize() {
         RaRays.LOGGER.info("Initializing Ra Rays");
         PolymerItemGroupUtils.registerPolymerItemGroup(Identifier.of(RaRays.MOD_ID, "ras_things"), ITEM_GROUP);
-
+        PolymerResourcePackUtils.buildMain();
         LaserTicker.register();
     }
 
