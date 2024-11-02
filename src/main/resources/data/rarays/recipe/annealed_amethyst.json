@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:smelting",
+  "category": "misc",
+  "cookingtime": 1200,
+  "experience": 1,
+  "ingredient": {
+    "item": "rarays:moderately_tempered_amethyst"
+  },
+  "result": {
+    "id": "rarays:annealed_amethyst"
+  }
+}

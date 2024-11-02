@@ -28,9 +28,7 @@ public class RaRays implements ModInitializer {
 
     public static final List<Laser> lasers = new ArrayList<>();
 
-
     public static final RaRaySpawnerItem RA_RAY_SPAWNER_ITEM = registerItem("ra_ray_spawner", new RaRaySpawnerItem(new Item.Settings().fireproof().maxCount(1), Items.AMETHYST_SHARD));
-
     public static final RaRayCraftingItem SLIGHTLY_HEATED_AMETHYST = registerItem("slight_heated_amethyst", new RaRayCraftingItem(new Item.Settings().fireproof().maxCount(1), "slight_heated_amethyst"));
     public static final RaRayCraftingItem MODERATELY_TEMPERED_AMETHYST = registerItem("moderately_tempered_amethyst", new RaRayCraftingItem(new Item.Settings().fireproof().maxCount(1), "moderately_tempered_amethyst"));
     public static final RaRayCraftingItem ANNEALED_AMETHYST = registerItem("annealed_amethyst", new RaRayCraftingItem(new Item.Settings().fireproof().maxCount(1), "annealed_amethyst"));

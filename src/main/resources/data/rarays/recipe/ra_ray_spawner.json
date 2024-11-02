@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " G ",
+    " S ",
+    " N "
+  ],
+  "key": {
+    "G": {
+      "item": "rarays:glowing_hot_amethyst"
+    },
+    "S": {
+      "item": "minecraft:nether_star"
+    },
+    "N": {
+      "item": "minecraft:netherite_ingot"
+    }
+  },
+  "result": {
+    "id": "rarays:ra_ray_spawner",
+    "count": 1
+  }
+}
