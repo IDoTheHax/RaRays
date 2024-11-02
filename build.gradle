@@ -101,8 +101,8 @@ publishing {
 
 modrinth {
     // always run source ~/.bashrc before running modrinth
-    token = System.getenv("MODRINTH_TOKEN") // Remember to have the MODRINTH_TOKEN environment variable set or else this will fail - just make sure it stays private!
-    projectId = "rarays" // This can be the project ID or the slug. Either will work!
+    token = System.getenv("MODRINTH_TOKEN") ?: findProperty("modrinth.token") ?: ""
+    projectId = "pw7k77GI" // This can be the project ID or the slug. Either will work!
     versionNumber = project.version // You don't need to set this manually. Will fail if Modrinth has this version already
     versionType = "beta" // This is the default -- can also be `beta` or `alpha`
     uploadFile = remapJar // With Loom, this MUST be set to `remapJar` instead of `jar`!
@@ -115,6 +115,5 @@ modrinth {
         // The type can either be `project` or `version`
         required.project "fabric-api"
         embedded.project "polymer"
-        optional.project ""
     }
 }
