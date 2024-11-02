@@ -4,5 +4,7 @@
   "item.rarays.slight_heated_amethyst": "Slightly Heated Amethyst",
   "item.rarays.moderately_tempered_amethyst": "Moderatly Tempered Amethyst",
   "item.rarays.annealed_amethyst": "Annealed Amethyst",
-  "item.rarays.glowing_hot_amethyst": "Glowing Hot Amethyst"
+  "item.rarays.glowing_hot_amethyst": "Glowing Hot Amethyst",
+  "advancements.adventure.ra_ray_spawner.title": "Blessing of Ra",
+  "advancements.adventure.ra_ray_spawner.description": "Obtain the Rays of Ra"
 }

@@ -3,33 +3,50 @@ package net.idothehax.rarays.item;
 import eu.pb4.polymer.core.api.item.SimplePolymerItem;
 import net.idothehax.rarays.RaRays;
 import net.idothehax.rarays.laser.Laser;
+import net.minecraft.entity.effect.StatusEffectInstance;
+import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
 import net.minecraft.util.TypedActionResult;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.RaycastContext;
 import net.minecraft.world.World;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class RaRaySpawnerItem extends SimplePolymerItem {
-
     public RaRaySpawnerItem(Settings settings, Item polymerItem) {
         super(settings, polymerItem);
     }
 
     @Override
     public TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {
+        ItemStack stack = user.getStackInHand(hand);
+
+        // Check if the item is on cooldown, if so do nuthin
+        if (user.getItemCooldownManager().isCoolingDown(this)) {
+            user.sendMessage(Text.literal("Your Ray is on cooldown!").formatted(Formatting.DARK_RED), false);
+            return TypedActionResult.pass(stack);
+        }
+
         if (!world.isClient) {
+            if (world.isNight()) {
+                // Glowing effect for 60 seconds (1200 ticks)
+                user.addStatusEffect(new StatusEffectInstance(StatusEffects.GLOWING, 1200, 0, false, false, true));
+            }
+
+            // Spawn the laser
             Laser laser = new Laser(world, user);
             laser.spawnLaser();
             RaRays.lasers.add(laser);
-            return TypedActionResult.success(user.getStackInHand(hand));
+
+            // Set the item on cooldown
+            user.getItemCooldownManager().set(this, 5000); // 5 minutes
+
+            return TypedActionResult.success(stack);
         }
-        return TypedActionResult.pass(user.getStackInHand(hand));
+
+        return TypedActionResult.pass(stack);
     }
+
 }

@@ -1,0 +1,37 @@
+{
+  "parent": "minecraft:adventure/root",
+  "criteria": {
+    "ra": {
+      "conditions": {
+        "items": [
+          {
+            "items": "rarays:ra_ray_spawner"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.adventure.ra_ray_spawner.description"
+    },
+    "frame": "challenge",
+    "icon": {
+      "count": 1,
+      "id": "rarays:ra_ray_spawner"
+    },
+    "title": {
+      "translate": "advancements.adventure.ra_ray_spawner.title"
+    }
+  },
+  "requirements": [
+    [
+      "ra"
+    ]
+  ],
+  "rewards": {
+    "experience": 500
+  },
+  "sends_telemetry_event": true
+}
