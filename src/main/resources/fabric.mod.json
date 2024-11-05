@@ -5,7 +5,7 @@
   "name": "Ra's Rays",
   "description": "",
   "authors": ["IDoTheHax"],
-  "contributors": ["Patbox, Pinnit"],
+
   "contact": {
     "discord": "https://discord.gg/asvf6Mvfsq",
     "repo": "https://github.com/IDoTheHax/RaRays"
@@ -22,7 +22,7 @@
     "rarays.mixins.json"
   ],
   "depends": {
-    "fabricloader": ">=${loader_version}",
+    "fabricloader": "~0.16.1",
     "fabric": "*",
     "minecraft": "${minecraft_version}"
   }
