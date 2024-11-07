@@ -4,6 +4,8 @@ import net.idothehax.rarays.RaRays;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.sound.SoundCategory;
+import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
@@ -117,6 +119,8 @@ public class Laser {
 
         // Start the spawn animation
         isSpawning = true;
+
+        world.playSound((PlayerEntity)null, startPos.getX() + 0.5, startPos.getY() + 0.5, startPos.getZ() + 0.5, SoundEvents.ENTITY_WARDEN_SONIC_CHARGE, SoundCategory.BLOCKS, 10.0F, 0.8F);
 
         LaserTicker.addLaser(this);
     }

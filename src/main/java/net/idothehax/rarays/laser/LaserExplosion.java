@@ -6,6 +6,11 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
+import net.minecraft.sound.SoundCategory;
+import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Direction;
@@ -35,6 +40,7 @@ public class LaserExplosion {
     private static final int SHOCKWAVE_PARTICLES_PER_RING = 256;
     private static final float SHOCKWAVE_EXPANSION_RATE = 3.0f; // Faster rate for shockwave
     private static final float MAX_SHOCKWAVE_RADIUS = 150.0f;
+    public static final double maxHearingDistance = 250.0;
     private final Random random;
     private final ElementHolder holder;
     private boolean isExpanding = true;
@@ -47,6 +53,55 @@ public class LaserExplosion {
         createExplosionParticles();
         createBurnParticles();
         createShockwaveParticles();
+
+        // Trigger the sound
+        playSound((ServerWorld) world, center, maxHearingDistance);
+
+    }
+
+    private void playSound(ServerWorld world, Vec3d sourcePosition, double maxDistance) {
+        for (ServerPlayerEntity player : world.getPlayers()) {
+            // Calculate distance from source to player
+            Vec3d playerPosition = player.getPos();
+            double distance = sourcePosition.distanceTo(playerPosition);
+
+            // Normalize volume based on distance
+            float volume = (float) Math.max(0, 1 - (distance / maxDistance));
+
+            // Only play if volume > 0
+            if (volume > 0) {
+                world.playSound(
+                        null,
+                        player.getBlockPos().getX(),
+                        player.getBlockPos().getY(),
+                        player.getBlockPos().getZ(),
+                        SoundEvents.ENTITY_WARDEN_SONIC_BOOM,
+                        SoundCategory.PLAYERS,
+                        volume,
+                        0f
+                );
+                world.playSound(
+                        null,
+                        player.getBlockPos().getX(),
+                        player.getBlockPos().getY(),
+                        player.getBlockPos().getZ(),
+                        SoundEvents.ENTITY_WARDEN_SONIC_BOOM,
+                        SoundCategory.PLAYERS,
+                        volume,
+                        1f
+                );
+                world.playSound(
+                        null,
+                        player.getBlockPos().getX(),
+                        player.getBlockPos().getY(),
+                        player.getBlockPos().getZ(),
+                        SoundEvents.ITEM_TOTEM_USE,
+                        SoundCategory.PLAYERS,
+                        volume,
+                        0.5f
+                );
+            }
+        }
     }
 
     private void createExplosionParticles() {
@@ -57,8 +112,6 @@ public class LaserExplosion {
                 Blocks.HONEYCOMB_BLOCK,
                 Blocks.SHROOMLIGHT
         };
-
-
 
         // Create multiple rings of particles
         for (int ring = 0; ring < NUMBER_OF_RINGS; ring++) {

@@ -8,6 +8,9 @@ import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.sound.SoundCategory;
+import net.minecraft.sound.SoundEvent;
+import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
@@ -34,6 +37,8 @@ public class RaRaySpawnerItem extends SimplePolymerItem {
                 // Glowing effect for 60 seconds (1200 ticks)
                 user.addStatusEffect(new StatusEffectInstance(StatusEffects.GLOWING, 1200, 0, false, false, true));
             }
+
+            world.playSound((PlayerEntity)null, user.getX() + 0.5, user.getY() + 0.5, user.getZ() + 0.5, SoundEvents.BLOCK_RESPAWN_ANCHOR_CHARGE, SoundCategory.BLOCKS, 3.0F, 1.0F);
 
             // Spawn the laser
             Laser laser = new Laser(world, user);
