@@ -40,7 +40,7 @@ public class LaserExplosion {
     private static final int SHOCKWAVE_PARTICLES_PER_RING = 256;
     private static final float SHOCKWAVE_EXPANSION_RATE = 3.0f; // Faster rate for shockwave
     private static final float MAX_SHOCKWAVE_RADIUS = 150.0f;
-    public static final double maxHearingDistance = 250.0;
+    public static final double maxHearingDistance = 500.0;
     private final Random random;
     private final ElementHolder holder;
     private boolean isExpanding = true;
