@@ -3,6 +3,7 @@ package net.idothehax.rarays;
 import eu.pb4.polymer.core.api.item.PolymerItemGroupUtils;
 import eu.pb4.polymer.resourcepack.api.PolymerResourcePackUtils;
 import net.fabricmc.api.ModInitializer;
+import net.idothehax.rarays.config.Config;
 import net.idothehax.rarays.item.RaRayCraftingItem;
 import net.idothehax.rarays.item.RaRaySpawnerItem;
 import net.idothehax.rarays.laser.Laser;
@@ -46,6 +47,8 @@ public class RaRays implements ModInitializer {
     @Override
     public void onInitialize() {
         RaRays.LOGGER.info("Initializing Ra Rays");
+        RaCommands.register();
+        Config.load();
         PolymerItemGroupUtils.registerPolymerItemGroup(Identifier.of(RaRays.MOD_ID, "ras_things"), ITEM_GROUP);
         PolymerResourcePackUtils.buildMain();
         LaserTicker.register();

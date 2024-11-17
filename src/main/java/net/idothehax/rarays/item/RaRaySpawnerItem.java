@@ -1,6 +1,7 @@
 package net.idothehax.rarays.item;
 
 import eu.pb4.polymer.core.api.item.SimplePolymerItem;
+import net.idothehax.rarays.config.Config;
 import net.idothehax.rarays.RaRays;
 import net.idothehax.rarays.laser.Laser;
 import net.minecraft.entity.effect.StatusEffectInstance;
@@ -9,7 +10,6 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
@@ -46,7 +46,7 @@ public class RaRaySpawnerItem extends SimplePolymerItem {
             RaRays.lasers.add(laser);
 
             // Set the item on cooldown
-            user.getItemCooldownManager().set(this, 5000); // 5 minutes
+            user.getItemCooldownManager().set(this, Config.getInstance().getRaRaysCooldown()); // 5 minutes
 
             return TypedActionResult.success(stack);
         }
