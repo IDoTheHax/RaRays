@@ -51,6 +51,7 @@ public class RaRays implements ModInitializer {
         Config.load();
         PolymerItemGroupUtils.registerPolymerItemGroup(Identifier.of(RaRays.MOD_ID, "ras_things"), ITEM_GROUP);
         PolymerResourcePackUtils.buildMain();
+        PolymerResourcePackUtils.addModAssets("rarays");
         LaserTicker.register();
     }
 
