@@ -14,6 +14,7 @@ public class Config {
     private static Config INSTANCE;
 
     private int raRaysCooldown = 5000; // Default cooldown in ticks
+    private float knockbackStrength = 0.5f; // Default value
 
     public static Config getInstance() {
         if (INSTANCE == null) {
@@ -56,5 +57,13 @@ public class Config {
     public void setRaRaysCooldown(int cooldown) {
         this.raRaysCooldown = cooldown;
         save();
+    }
+
+    public float getKnockbackStrength() {
+        return knockbackStrength;
+    }
+
+    public void setKnockbackStrength(float knockbackStrength) {
+        this.knockbackStrength = knockbackStrength;
     }
 }

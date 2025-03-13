@@ -2,6 +2,7 @@ package net.idothehax.rarays.laser;
 
 import eu.pb4.polymer.virtualentity.api.ElementHolder;
 import eu.pb4.polymer.virtualentity.api.elements.BlockDisplayElement;
+import net.idothehax.rarays.config.Config;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
@@ -29,6 +30,7 @@ public class LaserExplosion {
     private final List<Particle> explosionParticles = new ArrayList<>();
     private final List<Particle> burnParticles = new ArrayList<>();
     private final List<Particle> shockwaveParticles = new ArrayList<>();
+    Set<LivingEntity> affectedEntities = new HashSet<>(); // Track affected entities
 
     private final Vec3d center;
     private final World world;
@@ -347,8 +349,8 @@ public class LaserExplosion {
                 element.setOverridePos(newPosition);
                 element.setScale(new Vector3f(scale, scale, scale));
 
-                // Check for entities within the shockwave's radius
-                applyKnockbackToEntities(newPosition, scale); // new method for knockback
+                // Apply knockback only if entity hasn't been affected yet
+                applyKnockbackToEntities(newPosition, scale, affectedEntities);
             }
 
             // Occasional random burns in the center
@@ -425,16 +427,19 @@ public class LaserExplosion {
         return block == Blocks.NETHERRACK || block == Blocks.MAGMA_BLOCK || block == Blocks.OBSIDIAN;
     }
 
-    private void applyKnockbackToEntities(Vec3d shockwavePosition, float shockwaveRadius) {
-        // Check for entities near the shockwave particle
+    private void applyKnockbackToEntities(Vec3d shockwavePosition, float shockwaveRadius, Set<LivingEntity> affectedEntities) {
         List<LivingEntity> entities = world.getEntitiesByClass(LivingEntity.class,
                 new Box(shockwavePosition.subtract(1, 1, 1), shockwavePosition.add(1, 1, 1)),
-                entity -> entity != null && entity.isAlive());
+                entity -> entity != null && entity.isAlive() && !affectedEntities.contains(entity)); // Ignore already affected entities
+
+        float knockbackMultiplier = Config.getInstance().getKnockbackStrength(); // Get from config
 
         for (LivingEntity entity : entities) {
+            affectedEntities.add(entity); // Mark as affected
+
             Vec3d knockbackDirection = entity.getPos().subtract(shockwavePosition).normalize();
-            entity.setVelocity(entity.getVelocity().add(knockbackDirection.multiply(1.5).add(0, 5.0, 0))); // Adjust knockback strength
-            entity.velocityModified = true; // Mark velocity as modified
+            entity.setVelocity(entity.getVelocity().add(knockbackDirection.multiply(knockbackMultiplier).add(0, 5.0, 0)));
+            entity.velocityModified = true;
         }
     }
 
