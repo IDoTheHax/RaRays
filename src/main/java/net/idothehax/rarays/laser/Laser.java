@@ -18,6 +18,7 @@ import eu.pb4.polymer.virtualentity.api.ElementHolder;
 import eu.pb4.polymer.virtualentity.api.attachment.ChunkAttachment;
 import eu.pb4.polymer.virtualentity.api.elements.BlockDisplayElement;
 import net.minecraft.block.Blocks;
+import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import java.util.ArrayList;
@@ -125,61 +126,102 @@ public class Laser {
         LaserTicker.addLaser(this);
     }
 
-    private void createBlocks(Vec3d startPos, int numberOfGlassBlocks, int numberOfBlocks) {
-        // Create glass blocks
-        for (int i = 0; i < numberOfGlassBlocks; i++) {
-            BlockDisplayElement glassElement = new BlockDisplayElement();
-            glassElement.setBlockState(Blocks.WHITE_STAINED_GLASS.getDefaultState());
+    public void createBlocks(Vec3d startPos, int numberOfGlassBlocks, int numberOfBlocks) {
+        // Calculate the vector from start to target
+        Vec3d laserVector = targetPosition.subtract(startPos);
+        double distance = laserVector.length();
 
-            double progress = (double) i / (numberOfGlassBlocks - 1);
-            Vec3d pos = startPos.lerp(targetPosition, progress);
+        // Normalize the vector to get direction
+        Vec3d directionVec = laserVector.normalize();
 
-            double offsetAmount = 0.02;
-            Vec3d offset = new Vec3d(
-                    random.nextDouble() * offsetAmount - offsetAmount / 2,
-                    random.nextDouble() * offsetAmount - offsetAmount / 2,
-                    random.nextDouble() * offsetAmount - offsetAmount / 2
-            );
+        // Create outer beam (glass)
+        BlockDisplayElement outerBeam = new BlockDisplayElement();
+        outerBeam.setBlockState(Blocks.WHITE_STAINED_GLASS.getDefaultState());
 
-            Vec3d finalPos = pos.add(offset).add(0.5, 0.5, 0.5);
-            glassElement.setOverridePos(finalPos);
-            glassElement.setScale(new Vector3f(0, 0, 0));  // Initially invisible
+        // Position at midpoint between start and target
+        Vec3d midpoint = startPos.add(laserVector.multiply(0.5));
+        outerBeam.setOverridePos(midpoint);
 
-            if (i == numberOfGlassBlocks - 1) {
-                lastElementPosition = finalPos;
-            }
+        // Create transformation to rotate and scale the beam along the direction vector
+        Quaternionf rotation = createRotationFromVectors(new Vec3d(0, 1, 0), directionVec);
 
-            glassElements.add(glassElement);
-            holder.addElement(glassElement);
-        }
+        // Set rotation first (before setting scale to zero)
+        outerBeam.setLeftRotation(rotation);
 
-        // Create wool blocks
-        for (int i = 0; i < numberOfBlocks; i++) {
-            BlockDisplayElement laserElement = new BlockDisplayElement();
-            laserElement.setBlockState(Blocks.LIGHT_BLUE_WOOL.getDefaultState());
+        // Initially invisible
+        outerBeam.setScale(new Vector3f(0, 0, 0));
 
-            double progress = (double) i / (numberOfBlocks - 1);
-            Vec3d pos = startPos.lerp(targetPosition, progress);
+        glassElements.add(outerBeam);
+        holder.addElement(outerBeam);
 
-            double offsetAmount = 0.02;
-            Vec3d offset = new Vec3d(
-                    random.nextDouble() * offsetAmount - offsetAmount / 2,
-                    random.nextDouble() * offsetAmount - offsetAmount / 2,
-                    random.nextDouble() * offsetAmount - offsetAmount / 2
-            );
+        // Create inner beam (wool) - slightly thinner and brighter
+        BlockDisplayElement innerBeam = new BlockDisplayElement();
+        innerBeam.setBlockState(Blocks.LIGHT_BLUE_WOOL.getDefaultState());
+        innerBeam.setOverridePos(midpoint);
 
-            Vec3d finalPos = pos.add(offset).add(0.75, 1, 0.75);
-            laserElement.setOverridePos(finalPos);
-            laserElement.setScale(new Vector3f(0, 0, 0));  // Initially invisible
+        // Set rotation first
+        innerBeam.setLeftRotation(rotation);
 
-            if (i == numberOfBlocks - 1) {
-                lastElementPosition = finalPos;
-            }
+        // Initially invisible
+        innerBeam.setScale(new Vector3f(0, 0, 0));
 
-            laserElements.add(laserElement);
-            holder.addElement(laserElement);
-        }
+        laserElements.add(innerBeam);
+        holder.addElement(innerBeam);
+
+        // Set last element position for collision detection
+        lastElementPosition = targetPosition;
     }
+
+    private Quaternionf createRotationFromVectors(Vec3d from, Vec3d to) {
+        // Convert Vec3d to Vector3f
+        Vector3f fromVec = new Vector3f((float)from.x, (float)from.y, (float)from.z);
+        Vector3f toVec = new Vector3f((float)to.x, (float)to.y, (float)to.z);
+
+        // Normalize vectors
+        fromVec.normalize();
+        toVec.normalize();
+
+        // Find rotation axis (cross product)
+        Vector3f axis = new Vector3f();
+        axis.set(fromVec).cross(toVec);
+
+        // If vectors are parallel, we need a different approach
+        if (axis.length() < 0.01f) {
+            // Check if they point in same or opposite directions
+            if (fromVec.dot(toVec) > 0) {
+                // Same direction, no rotation needed
+                return new Quaternionf().identity();
+            } else {
+                // Opposite direction, rotate 180° around any perpendicular axis
+                Vector3f perpendicular = new Vector3f(1, 0, 0);
+                if (Math.abs(fromVec.dot(perpendicular)) > 0.9f) {
+                    perpendicular.set(0, 1, 0);
+                }
+
+                // Make perpendicular
+                Vector3f tempVec = new Vector3f(perpendicular);
+                tempVec.cross(fromVec);
+                perpendicular = tempVec.normalize();
+
+                // Create quaternion for 180-degree rotation
+                return new Quaternionf().fromAxisAngleRad(
+                        perpendicular.x(), perpendicular.y(), perpendicular.z(), (float)Math.PI
+                );
+            }
+        }
+
+        // Normalize rotation axis
+        axis.normalize();
+
+        // Calculate rotation angle
+        float angle = (float)Math.acos(fromVec.dot(toVec));
+
+        // Create and return quaternion
+        return new Quaternionf().fromAxisAngleRad(
+                axis.x(), axis.y(), axis.z(), angle
+        );
+    }
+
 
     public void update() {
         if (isSpawning) {
@@ -260,37 +302,31 @@ public class Laser {
     }
 
     private void updateSpawn() {
-        // Total blocks spawned this tick
-        int blocksSpawnedThisTick = 0;
+        // Since we only have one or a few elements now, just make them visible
+        if (!glassElements.isEmpty() && !activeGlassElements.contains(glassElements.get(0))) {
+            BlockDisplayElement outerBeam = glassElements.get(0);
+            // Make it visible by setting proper scale
+            float beamThickness = 1.0f;
+            double distance = targetPosition.distanceTo(outerBeam.getOverridePos()) * 2;
+            outerBeam.setScale(new Vector3f(beamThickness, (float)distance, beamThickness));
+            activeGlassElements.add(outerBeam);
+            clearPathAlongBeam(outerBeam);
+        }
 
-        // Spawn blocks gradually
-        while (blocksSpawnedThisTick < TOTAL_SPAWN_RATE) {
-            // Spawn a glass block if available
-            if (glassSpawnIndex < glassElements.size()) {
-                BlockDisplayElement glassElement = glassElements.get(glassSpawnIndex);
-                glassElement.setScale(new Vector3f(1.0f, 1.0f, 1.0f));
-                activeGlassElements.add(glassElement);
-                clearNearbyBlocks(glassElement);
-                glassSpawnIndex++;
-                blocksSpawnedThisTick++;
-            }
+        if (!laserElements.isEmpty() && !activeLaserElements.contains(laserElements.get(0))) {
+            BlockDisplayElement innerBeam = laserElements.get(0);
+            // Make it visible by setting proper scale
+            float innerThickness = 0.5f;
+            double distance = targetPosition.distanceTo(innerBeam.getOverridePos()) * 2;
+            innerBeam.setScale(new Vector3f(innerThickness, (float)distance, innerThickness));
+            activeLaserElements.add(innerBeam);
+        }
 
-            // Spawn a wool block if available
-            if (laserSpawnIndex < laserElements.size() && blocksSpawnedThisTick < TOTAL_SPAWN_RATE) {
-                BlockDisplayElement laserElement = laserElements.get(laserSpawnIndex);
-                laserElement.setScale(new Vector3f(0.5f, 0.5f, 0.5f));
-                activeLaserElements.add(laserElement);
-                clearNearbyBlocks(laserElement);
-                laserSpawnIndex++;
-                blocksSpawnedThisTick++;
-            }
-
-            // If both have reached their limit, stop spawning
-            if (glassSpawnIndex >= glassElements.size() && laserSpawnIndex >= laserElements.size()) {
-                isSpawning = false;
-                player.addStatusEffect(new StatusEffectInstance(StatusEffects.NIGHT_VISION, 600, 0, false, false, true));
-                break;
-            }
+        if (!glassElements.isEmpty() && !laserElements.isEmpty() &&
+                activeGlassElements.contains(glassElements.get(0)) &&
+                activeLaserElements.contains(laserElements.get(0))) {
+            isSpawning = false;
+            player.addStatusEffect(new StatusEffectInstance(StatusEffects.NIGHT_VISION, 600, 0, false, false, true));
         }
     }
 
@@ -341,29 +377,45 @@ public class Laser {
     public void updateOscillation() {
         oscillationTime += OSCILLATION_SPEED;
         double oscillationFactor = Math.sin(oscillationTime);
-        float scale = 1.0f + (float)(oscillationFactor * OSCILLATION_AMPLITUDE);
 
         for (BlockDisplayElement glassElement : activeGlassElements) {
-            glassElement.setScale(new Vector3f(scale, scale, scale));
+            Vector3f currentScale = new Vector3f(glassElement.getScale());
+            // Only oscillate thickness (x and z), keep y (length) constant
+            float thickness = 1.0f + (float)(oscillationFactor * OSCILLATION_AMPLITUDE);
+            glassElement.setScale(new Vector3f(thickness, currentScale.y(), thickness));
         }
 
         for (BlockDisplayElement laserElement : activeLaserElements) {
-            laserElement.setScale(new Vector3f((float) (0.5 * scale), (float) (0.5 * scale), (float) (0.5 * scale)));
+            Vector3f currentScale = new Vector3f(laserElement.getScale());
+            // Only oscillate thickness (x and z), keep y (length) constant
+            float thickness = 0.5f + (float)(oscillationFactor * OSCILLATION_AMPLITUDE * 0.5f);
+            laserElement.setScale(new Vector3f(thickness, currentScale.y(), thickness));
         }
     }
 
-    private void clearNearbyBlocks(BlockDisplayElement element) {
-        // Get the position of the block display element
-        BlockPos pos = BlockPos.ofFloored(element.getCurrentPos());
+    private void clearPathAlongBeam(BlockDisplayElement element) {
+        Vec3d beamDirection = targetPosition.subtract(element.getOverridePos()).normalize();
+        double beamLength = element.getOverridePos().distanceTo(targetPosition);
 
-        // Clear blocks in a radius of 3
-        for (int dx = -3; dx <= 3; dx++) {
-            for (int dy = -3; dy <= 3; dy++) {
-                for (int dz = -3; dz <= 3; dz++) {
-                    BlockPos nearbyPos = pos.add(dx, dy, dz);
-                    if (world.getBlockState(nearbyPos).isSolidBlock(world, nearbyPos)) {
-                        // Set block to air if it is solid
-                        world.setBlockState(nearbyPos, Blocks.AIR.getDefaultState());
+        // Clear blocks along the entire beam path
+        int steps = (int)(beamLength / 2.0) + 1;
+        double stepSize = beamLength / steps;
+
+        for (int step = 0; step < steps; step++) {
+            Vec3d checkPos = element.getOverridePos().add(beamDirection.multiply(step * stepSize));
+            BlockPos centerPos = BlockPos.ofFloored(checkPos);
+
+            // Clear blocks in a radius of 2 around this point (thinner beam)
+            for (int dx = -2; dx <= 2; dx++) {
+                for (int dy = -2; dy <= 2; dy++) {
+                    for (int dz = -2; dz <= 2; dz++) {
+                        BlockPos nearbyPos = centerPos.add(dx, dy, dz);
+                        // Only clear if it's not too far from beam center
+                        if (dx*dx + dy*dy + dz*dz <= 4 &&
+                                world.getBlockState(nearbyPos).isSolidBlock(world, nearbyPos)) {
+                            // Set block to air if it is solid
+                            world.setBlockState(nearbyPos, Blocks.AIR.getDefaultState());
+                        }
                     }
                 }
             }
