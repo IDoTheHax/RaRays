@@ -282,23 +282,45 @@ public class Laser {
     }
 
     private void moveLaser() {
-        // Move the starting position and target position based on the direction
+        // Only move the starting position, keeping the target fixed
         if (lastElementPosition != null) {
             Vec3d displacement = direction.multiply(SATELLITE_SPEED);
-            lastElementPosition = lastElementPosition.add(displacement);
-            targetPosition = targetPosition.add(displacement);
 
-            // Update the positions of active elements to follow the new target position
+            // Update only the beam elements' positions, not the target point
             for (BlockDisplayElement glassElement : activeGlassElements) {
                 Vec3d currentPos = glassElement.getOverridePos();
                 glassElement.setOverridePos(currentPos.add(displacement));
+
+                // Recalculate the beam scale and rotation to keep it pointing at the fixed target
+                updateBeamTransformation(glassElement, targetPosition);
             }
 
             for (BlockDisplayElement laserElement : activeLaserElements) {
                 Vec3d currentPos = laserElement.getOverridePos();
                 laserElement.setOverridePos(currentPos.add(displacement));
+
+                // Recalculate the beam scale and rotation to keep it pointing at the fixed target
+                updateBeamTransformation(laserElement, targetPosition);
             }
         }
+    }
+
+    private void updateBeamTransformation(BlockDisplayElement beam, Vec3d target) {
+        Vec3d beamPos = beam.getOverridePos();
+        Vec3d beamToTarget = target.subtract(beamPos);
+        double distance = beamToTarget.length() * 2; // Double the distance for proper scaling
+        Vec3d directionVec = beamToTarget.normalize();
+
+        // Create rotation based on the current position to the fixed target
+        Quaternionf rotation = createRotationFromVectors(new Vec3d(0, 1, 0), directionVec);
+
+        // Update the beam's rotation
+        beam.setLeftRotation(rotation);
+
+        // Update scale - maintain thickness but adjust length
+        Vector3f currentScale = (Vector3f) beam.getScale();
+        float thickness = currentScale.x(); // Preserve current thickness
+        beam.setScale(new Vector3f(thickness, (float)distance, thickness));
     }
 
     private void updateSpawn() {
